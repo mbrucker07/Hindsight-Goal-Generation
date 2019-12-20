@@ -14,7 +14,8 @@ class IntervalGoalEnv(FixedObjectGoalEnv):
 				goal[1] += np.random.uniform(-self.target_range, self.target_range)*0.5
 			else:
 				goal[0] += np.random.uniform(-self.target_range, self.target_range)
-				goal[1] += self.target_range
+				# goal[1] += self.target_range
+				goal[1] += np.random.uniform(-self.target_range, self.target_range) # TODO: changed
 			goal[2] = self.height_offset + int(self.target_in_the_air)*0.45
 		else:
 			goal = self.initial_gripper_xpos[:3] + np.array([np.random.uniform(-self.target_range, self.target_range), self.target_range, self.target_range])
