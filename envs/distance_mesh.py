@@ -123,7 +123,7 @@ class DistanceMesh:
     def coords2index(self, coords):
         [x, y, z] = coords
         if not (self.x_min <= x <= self.x_max and self.y_min <= y <= self.y_max and self.z_min <= z <= self.z_max):
-            raise Exception("Requested coords are outside defined coord space")
+            return None
         i = np.round(x/self.dx)
         j = np.round(y/self.dy)
         k = np.round(z/self.dz)
@@ -174,6 +174,8 @@ class DistanceMesh:
         # coords1 and coords2 of form [1, 1, 1]
         if self.dist_matrix is None:
             raise Exception("No dist_matrix available!")
+        if self.coords2index(coords1) is None or self.coords2index(coords2) is None:
+            return np.inf
         return self.dist_matrix[self.index2node(self.coords2index(coords1)), self.index2node(self.coords2index(coords2))]
 
     def plot_mesh(self):
