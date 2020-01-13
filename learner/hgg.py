@@ -4,6 +4,9 @@ from envs import make_env
 from envs.utils import goal_distance
 from algorithm.replay_buffer import Trajectory, goal_concat
 from utils.gcc_utils import gcc_load_lib, c_double, c_int
+from envs.distance_mesh import DistanceMesh
+
+#TODO: replaced goal_distance with get_mesh_goal_distance
 
 class TrajectoryPool:
 	def __init__(self, args, pool_length):
@@ -49,12 +52,31 @@ class MatchSampler:
 		self.match_lib = gcc_load_lib('learner/cost_flow.c')
 		self.achieved_trajectory_pool = achieved_trajectory_pool
 
+		if self.args.mesh:
+			self.create_mesh_distance()
+
 		# estimating diameter
 		self.max_dis = 0
 		for i in range(1000):
 			obs = self.env.reset()
-			dis = goal_distance(obs['achieved_goal'],obs['desired_goal'])
+			dis = self.get_mesh_goal_distance(obs['achieved_goal'],obs['desired_goal']) #TODO: added self.get_mesh_
 			if dis>self.max_dis: self.max_dis = dis
+
+	def create_mesh_distance(self): #TODO: new
+		obstacles = list()
+		push_region = [1.3, 0.75, 0.6, 0.25, 0.35, 0.2]
+		push_obstacles = [[1.3 - 0.125, 0.75, 0.6 - 0.18, 0.125, 0.04, 0.1]]
+		mesh = DistanceMesh(region=push_region, spaces=[50, 50, 5], obstacles=push_obstacles)
+		mesh.compute_cs_graph()
+		mesh.compute_dist_matrix()
+		self.mesh = mesh
+
+	def get_mesh_goal_distance(self, goal_a, goal_b): #TODO: new
+		if self.args.mesh:
+			print("{} vs. {}".format(self.mesh.get_dist(goal_a, goal_b), np.linalg.norm(goal_a - goal_b, ord=2)))
+			return self.mesh.get_dist(goal_a, goal_b)
+		else:
+			return 	np.linalg.norm(goal_a - goal_b, ord=2)
 
 	def add_noise(self, pre_goal, noise_std=None):
 		goal = pre_goal.copy()
@@ -113,7 +135,7 @@ class MatchSampler:
 		for i in range(len(achieved_pool)):
 			for j in range(len(desired_goals)):
 				res = np.sqrt(np.sum(np.square(achieved_pool[i]-desired_goals[j]),axis=1)) - achieved_value[i]/(self.args.hgg_L/self.max_dis/(1-self.args.gamma))
-				match_dis = np.min(res)+goal_distance(achieved_pool[i][0], initial_goals[j])*self.args.hgg_c
+				match_dis = np.min(res)+self.get_mesh_goal_distance(achieved_pool[i][0], initial_goals[j])*self.args.hgg_c # TODO: added self.get_mesh_
 				match_idx = np.argmin(res)
 
 				edge = self.match_lib.add(graph_id['achieved'][i], graph_id['desired'][j], 1, c_double(match_dis))
@@ -188,7 +210,7 @@ class HGGLearner:
 
 		selection_trajectory_idx = {}
 		for i in range(self.args.episodes):
-			if goal_distance(achieved_trajectories[i][0], achieved_trajectories[i][-1])>0.01:
+			if self.sampler.get_mesh_goal_distance(achieved_trajectories[i][0], achieved_trajectories[i][-1])>0.01: # TODO: added self.sampler.get_mesh_
 				selection_trajectory_idx[i] = True
 		for idx in selection_trajectory_idx.keys():
 			self.achieved_trajectory_pool.insert(achieved_trajectories[idx].copy(), achieved_init_states[idx].copy())

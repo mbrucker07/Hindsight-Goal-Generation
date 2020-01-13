@@ -19,12 +19,12 @@ def get_args():
 	if args.env=='HandReach-v0':
 		parser.add_argument('--goal', help='method of goal generation', type=str, default='reach', choices=['vanilla', 'reach'])
 	else:
-		parser.add_argument('--goal', help='method of goal generation', type=str, default='interval', choices=['vanilla', 'fixobj', 'interval'])
+		parser.add_argument('--goal', help='method of goal generation', type=str, default='interval', choices=['vanilla', 'fixobj', 'interval', 'no_mesh', 'mesh']) #TODO added mesh and no_mesh
 		if args.env[:5]=='Fetch':
 			parser.add_argument('--init_offset', help='initial offset in fetch environments', type=np.float32, default=1.0)
 		elif args.env[:4]=='Hand':
 			parser.add_argument('--init_rotation', help='initial rotation in hand environments', type=np.float32, default=0.25)
-
+	parser.add_argument('--mesh', help='mesh yes or no', type=bool, default=False)
 	parser.add_argument('--gamma', help='discount factor', type=np.float32, default=0.98)
 	parser.add_argument('--clip_return', help='whether to clip return value', type=str2bool, default=True)
 	parser.add_argument('--eps_act', help='percentage of epsilon greedy explorarion', type=np.float32, default=0.3)
