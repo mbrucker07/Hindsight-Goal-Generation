@@ -124,9 +124,9 @@ class DistanceMesh:
         [x, y, z] = coords
         if not (self.x_min <= x <= self.x_max and self.y_min <= y <= self.y_max and self.z_min <= z <= self.z_max):
             return None
-        i = np.round(x/self.dx)
-        j = np.round(y/self.dy)
-        k = np.round(z/self.dz)
+        i = np.round((x-self.x_min)/self.dx)
+        j = np.round((y-self.y_min)/self.dy)
+        k = np.round((z-self.z_min)/self.dz)
         return i, j, k
 
 
@@ -176,6 +176,9 @@ class DistanceMesh:
             raise Exception("No dist_matrix available!")
         if self.coords2index(coords1) is None or self.coords2index(coords2) is None:
             return np.inf
+        goal_a = self.index2coords(self.node2index(self.index2node(self.coords2index(coords1))))
+        goal_b = self.index2coords(self.node2index(self.index2node(self.coords2index(coords2))))
+        print("get_dist goals: {} // {}".format(goal_a, goal_b))
         return self.dist_matrix[self.index2node(self.coords2index(coords1)), self.index2node(self.coords2index(coords2))]
 
     def plot_mesh(self):
