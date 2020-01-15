@@ -66,7 +66,7 @@ class MatchSampler:
 		obstacles = list()
 		push_region = [1.3, 0.75, 0.6, 0.25, 0.35, 0.2]
 		push_obstacles = [[1.3 - 0.125, 0.75, 0.6 - 0.18, 0.125, 0.04, 0.1]]
-		mesh = DistanceMesh(region=push_region, spaces=[50, 50, 2], obstacles=push_obstacles)
+		mesh = DistanceMesh(region=push_region, spaces=[50, 50, 3], obstacles=push_obstacles)
 		mesh.compute_cs_graph()
 		mesh.compute_dist_matrix()
 		self.mesh = mesh
