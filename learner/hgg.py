@@ -72,7 +72,7 @@ class MatchSampler:
 		self.mesh = mesh
 
 	def get_mesh_goal_distance(self, goal_a, goal_b): #TODO: new
-		print("HGG goals: {} // {}".format(goal_a, goal_b))
+		#print("HGG goals: {} // {}".format(goal_a, goal_b))
 		if self.args.mesh:
 			#print("{} vs. {}".format(self.mesh.get_dist(goal_a, goal_b), np.linalg.norm(goal_a - goal_b, ord=2)))
 			return self.mesh.get_dist(goal_a, goal_b)

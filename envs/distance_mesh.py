@@ -178,7 +178,7 @@ class DistanceMesh:
             return np.inf
         goal_a = self.index2coords(self.node2index(self.index2node(self.coords2index(coords1))))
         goal_b = self.index2coords(self.node2index(self.index2node(self.coords2index(coords2))))
-        print("get_dist goals: {} // {}".format(goal_a, goal_b))
+        #print("get_dist goals: {} // {}".format(goal_a, goal_b))
         return self.dist_matrix[self.index2node(self.coords2index(coords1)), self.index2node(self.coords2index(coords2))]
 
     def plot_mesh(self):
