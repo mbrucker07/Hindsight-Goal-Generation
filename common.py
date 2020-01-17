@@ -19,7 +19,7 @@ def get_args():
 	if args.env=='HandReach-v0':
 		parser.add_argument('--goal', help='method of goal generation', type=str, default='reach', choices=['vanilla', 'reach'])
 	else:
-		parser.add_argument('--goal', help='method of goal generation', type=str, default='interval', choices=['vanilla', 'fixobj', 'interval', 'no_mesh', 'mesh']) #TODO added mesh and no_mesh
+		parser.add_argument('--goal', help='method of goal generation', type=str, default='interval', choices=['vanilla', 'fixobj', 'interval', 'no_mesh', 'custom']) #TODO added mesh and no_mesh
 		if args.env[:5]=='Fetch':
 			parser.add_argument('--init_offset', help='initial offset in fetch environments', type=np.float32, default=1.0)
 		elif args.env[:4]=='Hand':
@@ -62,6 +62,8 @@ def get_args():
 
 	logger_name = args.alg+'-'+args.env+'-'+args.learn
 	if args.tag!='': logger_name = args.tag+'-'+logger_name
+	if args.mesh:
+		logger_name =logger_name + '-mesh'
 	args.logger = get_logger(logger_name)
 
 	for key, value in args.__dict__.items():

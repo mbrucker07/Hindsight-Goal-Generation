@@ -24,7 +24,8 @@ class NormalLearner:
 					info = agent.train(buffer.sample_batch())
 					args.logger.add_dict(info)
 				agent.target_update()
-
+		# TODO: deleted this duplicate test section
+		""" 
 		for _ in range(args.test_rollouts):
 			def test_rollout(env, prefix=''):
 				rewards = 0.0
@@ -45,3 +46,4 @@ class NormalLearner:
 			else:
 				# normal envs test
 				test_rollout(env)
+		"""
