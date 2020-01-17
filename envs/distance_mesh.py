@@ -1,22 +1,28 @@
 import sys
 import numpy as np
+import matplotlib
+matplotlib.use("TkAgg") # for plotting, had to sudo apt-get install python3-tk
 import matplotlib.pyplot as plt
-from scipy.sparse import csr_matrix
+from matplotlib.patches import Rectangle, PathPatch
+from scipy.sparse import csr_matrix, coo_matrix
 from scipy.sparse.csgraph import dijkstra
 from timeit import default_timer as timer
+from mpl_toolkits.mplot3d import axes3d
+import mpl_toolkits.mplot3d.art3d as art3d
 
 # TODO: edit section
 class DistanceMesh:
 
     cs_graph = None
     dist_matrix = None
+    predecessors = None
 
-    def __init__(self, region=[0.5, 0.5, 0.5, 0.5, 0.5, 0.5], spaces=[10, 10, 10], obstacles=list()):
-        # region is of form [m_x, m_y, m_z, l, w, h]
+    def __init__(self, field, spaces, obstacles):
+        # field is of form [m_x, m_y, m_z, l, w, h]
         # obstacles is list with entries of form: [m_x, m_y, m_z, l, w, h]
         # Up to 10000 nodes can be handled memorywise (computation time is not problematic)
         # x_spaces * y_spaces * z_spaces should not increase beyond 8000
-        [m_x, m_y, m_z, l, w, h] = region
+        [m_x, m_y, m_z, l, w, h] = field
 
         self.x_min = m_x - l
         self.y_min = m_y - w
@@ -97,7 +103,6 @@ class DistanceMesh:
             else:
                 return False
 
-
     def index2node(self, index):
         [i, j, k] = index
         node = i + j * self.x_range + k * self.x_range * self.y_range
@@ -137,6 +142,7 @@ class DistanceMesh:
         col = list()
         data = list()
 
+        # mark points with obstacle as black (1 in self.colors)
         for i in range(self.x_range):
             for j in range(self.y_range):
                 for k in range(self.z_range):
@@ -144,33 +150,40 @@ class DistanceMesh:
                     x, y, z = self.index2coords([i, j, k])
                     if self.black(x, y, z): # if point is black
                         self.colors[i, j, k] = 1
-                    else: # if point is white
+        # connect points which are white (0 in self.colors)
+        for i in range(self.x_range):
+            for j in range(self.y_range):
+                for k in range(self.z_range):
                         for a, b, c in self.previous:
-                            if self.colors[i+a, j+b, k+c] == 0: # i.e. is white
-                                basenode = self.index2node([i, j, k])
-                                connectnode = self.index2node([i+a, j+b, k+c])
-                                d = np.sqrt(a*a*self.dx*self.dx + b*b*self.dy*self.dy + c*c*self.dz*self.dz)
-                                #edges[index2node([i, j, k]), index2node([i+a, j+b, k+c])] = np.sqrt(a*a + b*b + c*c)
-                                #edges[index2node([i+a, j+b, k+c]), index2node([i, j, k])] = np.sqrt(a*a + b*b + c*c)
-                                row.append(basenode)
-                                col.append(connectnode)
-                                data.append(d)
+                            if self.colors[i, j, k] == 0:
+                                if self.colors[i+a, j+b, k+c] == 0: # i.e. is white
+                                    basenode = self.index2node([i, j, k])
+                                    connectnode = self.index2node([i+a, j+b, k+c])
+                                    d = np.sqrt(a*a*self.dx*self.dx + b*b*self.dy*self.dy + c*c*self.dz*self.dz)
+                                    #edges[index2node([i, j, k]), index2node([i+a, j+b, k+c])] = np.sqrt(a*a + b*b + c*c)
+                                    #edges[index2node([i+a, j+b, k+c]), index2node([i, j, k])] = np.sqrt(a*a + b*b + c*c)
+                                    row.append(basenode)
+                                    col.append(connectnode)
+                                    data.append(d)
 
         #cs_graph = csr_matrix(edges)
         self.cs_graph = csr_matrix((data, (row,col)), shape=(self.num_nodes, self.num_nodes))
         end = timer()
         print("\tdone after {} secs".format(end-start))
 
-    def compute_dist_matrix(self):
+    def compute_dist_matrix(self, compute_predecessors=False):
         print("Computing {}x{} dist_matrix ...".format(self.num_nodes, self.num_nodes))
         start = timer()
         if self.cs_graph is None:
             raise Exception("No CS_Graph available!")
-        self.dist_matrix = dijkstra(self.cs_graph, directed=False)
+        if compute_predecessors:
+            self.dist_matrix, self.predecessors = dijkstra(self.cs_graph, directed=False, return_predecessors=True)
+        else:
+            self.dist_matrix = dijkstra(self.cs_graph, directed=False, return_predecessors=False)
         end = timer()
         print("\t done after {} secs".format(end-start))
 
-    def get_dist(self, coords1, coords2):
+    def get_dist(self, coords1, coords2, return_path=False):
         # coords1 and coords2 of form [1, 1, 1]
         if self.dist_matrix is None:
             raise Exception("No dist_matrix available!")
@@ -179,14 +192,88 @@ class DistanceMesh:
         goal_a = self.index2coords(self.node2index(self.index2node(self.coords2index(coords1))))
         goal_b = self.index2coords(self.node2index(self.index2node(self.coords2index(coords2))))
         #print("get_dist goals: {} // {}".format(goal_a, goal_b))
-        return self.dist_matrix[self.index2node(self.coords2index(coords1)), self.index2node(self.coords2index(coords2))]
+        node_a = self.index2node(self.coords2index(coords1))
+        node_b = self.index2node(self.coords2index(coords2))
+        if not return_path:
+            return self.dist_matrix[node_a, node_b]
+        else:
+            if self.predecessors is None:
+                raise Exception("No predecessors available!")
+            path = []
+            current_node = node_b
+            path.append(self.index2coords(self.node2index(current_node)))
+            while current_node != node_a:
+                current_node = self.predecessors[node_a, current_node]
+                path.append(self.index2coords(self.node2index(current_node)))
+            return self.dist_matrix[node_a, node_b], path
 
-    def plot_mesh(self):
+
+    def plot_graph(self, path=None, mesh=False, obstacle_nodes=False):
+        print("Plotting ...")
+        if self.cs_graph is None:
+            raise Exception("No cs_graph available")
         fig = plt.figure()
-        ax = fig.add_subplot(111, projection="3d")
-        X, Y, Z = self.colors.nonzero()
-        ax.scatter(-X, Y, -Z, zdir='z', c='red')
-        plt.savefig('mesh_plot.png')
+        ax = fig.add_subplot(111, projection='3d')
+        co_graph = coo_matrix(self.cs_graph)
+        # scatter plot boundaries of field
+        x_array = [self.x_min, self.x_min, self.x_min, self.x_min, self.x_max, self.x_max, self.x_max, self.x_max]
+        y_array = [self.y_min, self.y_min, self.y_max, self.y_max, self.y_min, self.y_min, self.y_max, self.y_max]
+        z_array = [self.z_min, self.z_max, self.z_min, self.z_max, self.z_min, self.z_max, self.z_min, self.z_max]
+        ax.scatter(x_array, y_array, z_array, c='b')
+        # plots obstacle
+        for [m_x, m_y, m_z, l, w, h] in self.obstacles:
+            # top
+            side1 = Rectangle((m_x-l, m_y-w), 2*l, 2*w, color=[0,0,1,0.1])
+            ax.add_patch(side1)
+            art3d.pathpatch_2d_to_3d(side1, z=m_z+h, zdir="z",)
+            # bottom
+            side1 = Rectangle((m_x-l, m_y-w), 2*l, 2*w, color=[0,0,1,0.1])
+            ax.add_patch(side1)
+            art3d.pathpatch_2d_to_3d(side1, z=m_z-h, zdir="z")
+            # back
+            side1 = Rectangle((m_y-w, m_z-h), 2*w, 2*h, color=[0,0,1,0.1])
+            ax.add_patch(side1)
+            art3d.pathpatch_2d_to_3d(side1, z=m_x+l, zdir="x")
+            # front
+            side1 = Rectangle((m_y-w, m_z-h), 2*w, 2*h, color=[0,0,1,0.1])
+            ax.add_patch(side1)
+            art3d.pathpatch_2d_to_3d(side1, z=m_x-l, zdir="x")
+            # right
+            side1 = Rectangle((m_z-h, m_x-l), 2*l, 2*h, color=[0,0,1,0.1])
+            ax.add_patch(side1)
+            art3d.pathpatch_2d_to_3d(side1, z=m_y+w, zdir="y")
+            # left
+            side1 = Rectangle((m_z-h, m_x-l), 2*l, 2*h, color=[0,0,1,0.1])
+            ax.add_patch(side1)
+            art3d.pathpatch_2d_to_3d(side1, z=m_y-w, zdir="y")
+            # plot graph edges
+        if mesh:
+            for i, j, v in zip(co_graph.row, co_graph.col, co_graph.data):
+                a = self.index2coords(self.node2index(i))
+                b = self.index2coords(self.node2index(j))
+                X, Y, Z = [a[0], b[0]], [a[1], b[1]], [a[2], b[2]]
+                ax.plot(X, Y, Z, c=[0, 1, 1, 0.1])
+        # scatter plot nodes that are marked as black (with obstacle)
+        if obstacle_nodes:
+            for i in range(self.x_range):
+                for j in range(self.y_range):
+                    for k in range(self.z_range):
+                        x, y, z = self.index2coords([i, j, k])
+                        if self.colors[i, j, k] == 1:
+                            ax.scatter([x], [y], [z], c='b')
+        # plot path
+        if path:
+            for i in range(len(path)-1):
+                a = path[i]
+                b = path[i+1]
+                X, Y, Z = [a[0], b[0]], [a[1], b[1]], [a[2], b[2]]
+                ax.plot(X, Y, Z, c=[1, 0, 0, 1])
+        ax.set_xlabel('x')
+        ax.set_ylabel('y')
+        ax.set_zlabel('z')
+        plt.show()
+        print("\tdone")
+
 
     def print_mesh(self):
         for i in range(self.z_range):
@@ -201,13 +288,16 @@ class DistanceMesh:
 
 def main():
     obstacles = list()
-    push_region = [1.3, 0.75, 0.6, 0.25, 0.35, 0.2]
-    push_obstacles = [[1.3-0.125, 0.75, 0.6-0.18, 0.125, 0.04, 0.1]]
-    mesh = DistanceMesh(region=push_region, spaces=[20, 20, 5], obstacles=push_obstacles)
+    field = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+    obstacles = [[0.5, 0.5, 0.25, 0.5, 0.25, 0.25]]
+    spaces = [30, 30, 5]
+    mesh = DistanceMesh(field=field, spaces=spaces, obstacles=obstacles)
     mesh.compute_cs_graph()
-    mesh.compute_dist_matrix()
-    #print(mesh.get_dist([0, 0.5, 0], [1, 0.5, 1]))
-    mesh.print_mesh()
+    mesh.compute_dist_matrix(compute_predecessors=True)
+    dist, path = mesh.get_dist([0, 0, 0], [1, 1, 0], return_path=True)
+    #mesh.plot_graph(path=path, mesh=True, obstacle_nodes=True)
+    mesh.plot_graph(path=path)
+    print("Dist: {}".format(dist))
 
 if __name__ == "__main__":
     main()

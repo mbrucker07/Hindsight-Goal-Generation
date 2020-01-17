@@ -64,9 +64,10 @@ class MatchSampler:
 
 	def create_mesh_distance(self): #TODO: new
 		obstacles = list()
-		push_region = [1.3, 0.75, 0.6, 0.25, 0.35, 0.2]
-		push_obstacles = [[1.3 - 0.125, 0.75, 0.6 - 0.18, 0.125, 0.04, 0.1]]
-		mesh = DistanceMesh(region=push_region, spaces=[50, 50, 3], obstacles=push_obstacles)
+		field = self.env.env.env.adapt_dict["field"]
+		obstacles = self.env.env.env.adapt_dict["obstacles"]
+		spaces = self.env.env.env.adapt_dict["spaces"]
+		mesh = DistanceMesh(field=field, spaces=spaces, obstacles=obstacles)
 		mesh.compute_cs_graph()
 		mesh.compute_dist_matrix()
 		self.mesh = mesh
