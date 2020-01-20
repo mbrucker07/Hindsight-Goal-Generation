@@ -6,7 +6,7 @@ class NormalLearner:
 	def __init__(self, args):
 		pass
 
-	def learn(self, args, env, env_test, agent, buffer):
+	def learn(self, args, env, env_test, agent, buffer, write_goals=0):
 		for _ in range(args.episodes):
 			obs = env.reset()
 			current = Trajectory(obs)

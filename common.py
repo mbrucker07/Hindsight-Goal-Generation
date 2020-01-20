@@ -25,6 +25,7 @@ def get_args():
 		elif args.env[:4]=='Hand':
 			parser.add_argument('--init_rotation', help='initial rotation in hand environments', type=np.float32, default=0.25)
 	parser.add_argument('--mesh', help='mesh yes or no', type=bool, default=False)
+	parser.add_argument('--show_goals', help='number of goals to show', type=np.int32, default=0)
 	parser.add_argument('--render', help='render for play', type=bool, default=False)
 	parser.add_argument('--gamma', help='discount factor', type=np.float32, default=0.98)
 	parser.add_argument('--clip_return', help='whether to clip return value', type=str2bool, default=True)

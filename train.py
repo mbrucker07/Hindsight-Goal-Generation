@@ -2,6 +2,7 @@ import numpy as np
 import time
 from common import get_args,experiment_setup
 from copy import deepcopy
+import pickle
 
 if __name__=='__main__':
 	args = get_args()
@@ -34,7 +35,7 @@ if __name__=='__main__':
 			args.logger.summary_clear()
 			start_time = time.time()
 
-			learner.learn(args, env, env_test, agent, buffer)
+			goal_list = learner.learn(args, env, env_test, agent, buffer, write_goals=args.show_goals)
 			tester.cycle_summary()
 
 			args.logger.add_record('Epoch', str(epoch)+'/'+str(args.epoches))
@@ -58,8 +59,15 @@ if __name__=='__main__':
 			"""
 			args.logger.tabular_show(args.tag)
 			args.logger.summary_show(buffer.counter)
+		if args.learn == 'hgg' and goal_list and args.show_goals != 0:
+			name = "{}goals_{}".format(args.logger.my_log_dir, epoch)
+			if args.mesh:
+				learner.sampler.mesh.plot_graph(goals=goal_list, save_path=name)
+			with open('{}.pkl'.format(name), 'wb') as file:
+					pickle.dump(goal_list, file)
 
 		tester.epoch_summary()
+
 		#args.logger.save_agent(deepcopy(agent), "periodical") # TODO: New
 
 	tester.final_summary()

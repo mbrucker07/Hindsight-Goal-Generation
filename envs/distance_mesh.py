@@ -208,7 +208,7 @@ class DistanceMesh:
             return self.dist_matrix[node_a, node_b], path
 
 
-    def plot_graph(self, path=None, mesh=False, obstacle_nodes=False):
+    def plot_graph(self, path=None, mesh=False, obstacle_nodes=False, goals=None, save_path='test'):
         print("Plotting ...")
         if self.cs_graph is None:
             raise Exception("No cs_graph available")
@@ -239,11 +239,11 @@ class DistanceMesh:
             ax.add_patch(side1)
             art3d.pathpatch_2d_to_3d(side1, z=m_x-l, zdir="x")
             # right
-            side1 = Rectangle((m_z-h, m_x-l), 2*l, 2*h, color=[0,0,1,0.1])
+            side1 = Rectangle((m_x-l, m_z-h), 2*l, 2*h, color=[0,0,1,0.1])
             ax.add_patch(side1)
             art3d.pathpatch_2d_to_3d(side1, z=m_y+w, zdir="y")
             # left
-            side1 = Rectangle((m_z-h, m_x-l), 2*l, 2*h, color=[0,0,1,0.1])
+            side1 = Rectangle((m_x-l, m_z-h), 2*l, 2*h, color=[0,0,1,0.1])
             ax.add_patch(side1)
             art3d.pathpatch_2d_to_3d(side1, z=m_y-w, zdir="y")
             # plot graph edges
@@ -261,6 +261,13 @@ class DistanceMesh:
                         x, y, z = self.index2coords([i, j, k])
                         if self.colors[i, j, k] == 1:
                             ax.scatter([x], [y], [z], c='b')
+        # plot goals:
+        for goal in goals:
+            x = goal[0]
+            y = goal[1]
+            z = goal[2]
+            ax.scatter([x], [y], [z], c='black')
+
         # plot path
         if path:
             for i in range(len(path)-1):
@@ -271,7 +278,7 @@ class DistanceMesh:
         ax.set_xlabel('x')
         ax.set_ylabel('y')
         ax.set_zlabel('z')
-        plt.show()
+        plt.savefig(save_path + ".png")
         print("\tdone")
 
 
@@ -291,12 +298,13 @@ def main():
     field = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
     obstacles = [[0.5, 0.5, 0.25, 0.5, 0.25, 0.25]]
     spaces = [30, 30, 5]
+    goals = [[1, 0, 0.2], [0,0.1, 0.1], [0.8, 0, 0]]
     mesh = DistanceMesh(field=field, spaces=spaces, obstacles=obstacles)
     mesh.compute_cs_graph()
     mesh.compute_dist_matrix(compute_predecessors=True)
     dist, path = mesh.get_dist([0, 0, 0], [1, 1, 0], return_path=True)
     #mesh.plot_graph(path=path, mesh=True, obstacle_nodes=True)
-    mesh.plot_graph(path=path)
+    mesh.plot_graph(goals=goals, save_path="../log/test")
     print("Dist: {}".format(dist))
 
 if __name__ == "__main__":

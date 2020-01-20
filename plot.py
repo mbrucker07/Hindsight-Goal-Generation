@@ -98,9 +98,7 @@ for curr_path in paths:
             # Process and smooth data.
             assert success_rate.shape == episode.shape
             x = episode
-            print("Episode: {}".format(x))
             y = success_rate
-            print("Success: {}".format(y))
             if args.smooth:
                 x, y = smooth_reward_curve(episode, success_rate)
             assert x.shape == y.shape
@@ -111,7 +109,6 @@ for curr_path in paths:
                 data[env_id][config] = []
             data[env_id][config].append((x, y))
 
-print("Data: {}".format(data))
 
 # Plot data.
 for env_id in sorted(data.keys()):

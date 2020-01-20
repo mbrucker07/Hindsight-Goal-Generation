@@ -170,9 +170,10 @@ class HGGLearner:
 		self.achieved_trajectory_pool = TrajectoryPool(args, args.hgg_pool_size)
 		self.sampler = MatchSampler(args, self.achieved_trajectory_pool)
 
-	def learn(self, args, env, env_test, agent, buffer):
+	def learn(self, args, env, env_test, agent, buffer, write_goals=0):
 		initial_goals = []
 		desired_goals = []
+		goal_list = []
 		for i in range(args.episodes):
 			obs = self.env_List[i].reset()
 			goal_a = obs['achieved_goal'].copy()
@@ -189,6 +190,8 @@ class HGGLearner:
 			init_state = obs['observation'].copy()
 			explore_goal = self.sampler.sample(i)
 			self.env_List[i].goal = explore_goal.copy()
+			if write_goals != 0 and len(goal_list)<write_goals:
+				goal_list.append(explore_goal.copy())
 			obs = self.env_List[i].get_obs()
 			current = Trajectory(obs)
 			trajectory = [obs['achieved_goal'].copy()]
@@ -216,3 +219,5 @@ class HGGLearner:
 				selection_trajectory_idx[i] = True
 		for idx in selection_trajectory_idx.keys():
 			self.achieved_trajectory_pool.insert(achieved_trajectories[idx].copy(), achieved_init_states[idx].copy())
+
+		return goal_list if len(goal_list)>0 else None
