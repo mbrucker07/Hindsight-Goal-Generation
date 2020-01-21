@@ -136,8 +136,18 @@ class MatchSampler:
 			self.match_lib.add(0, graph_id['achieved'][i], 1, 0)
 		for i in range(len(achieved_pool)):
 			for j in range(len(desired_goals)):
-				res = np.sqrt(np.sum(np.square(achieved_pool[i]-desired_goals[j]),axis=1)) - achieved_value[i]/(self.args.hgg_L/self.max_dis/(1-self.args.gamma))
-				match_dis = np.min(res)+self.get_mesh_goal_distance(achieved_pool[i][0], initial_goals[j])*self.args.hgg_c # TODO: added self.get_mesh_
+
+				#TODO: new section: use mesh_goal_distance here!
+				if self.args.mesh:
+					size = achieved_pool[i].shape[0]
+					res_1 = np.zeros(size)
+					for k in range(size):
+						res_1[k] = self.get_mesh_goal_distance(achieved_pool[i][k], desired_goals[i])
+					res = res_1 - achieved_value[i]/(self.args.hgg_L/self.max_dis/(1-self.args.gamma))
+				else:
+					res = np.sqrt(np.sum(np.square(achieved_pool[i] - desired_goals[j]), axis=1)) - achieved_value[i]/(self.args.hgg_L / self.max_dis / (1 - self.args.gamma))  # Todo: that was original
+
+				match_dis = np.min(res)+goal_distance(achieved_pool[i][0], initial_goals[j])*self.args.hgg_c # TODO: distance of initial positions: take l2 norm_as before
 				match_idx = np.argmin(res)
 
 				edge = self.match_lib.add(graph_id['achieved'][i], graph_id['desired'][j], 1, c_double(match_dis))
@@ -215,7 +225,7 @@ class HGGLearner:
 
 		selection_trajectory_idx = {}
 		for i in range(self.args.episodes):
-			if self.sampler.get_mesh_goal_distance(achieved_trajectories[i][0], achieved_trajectories[i][-1])>0.01: # TODO: added self.sampler.get_mesh_
+			if goal_distance(achieved_trajectories[i][0], achieved_trajectories[i][-1])>0.01: # TODO: take default for comparison_of final and end state! (default)
 				selection_trajectory_idx[i] = True
 		for idx in selection_trajectory_idx.keys():
 			self.achieved_trajectory_pool.insert(achieved_trajectories[idx].copy(), achieved_init_states[idx].copy())

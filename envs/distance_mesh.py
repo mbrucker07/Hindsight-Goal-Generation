@@ -9,6 +9,9 @@ from scipy.sparse.csgraph import dijkstra
 from timeit import default_timer as timer
 from mpl_toolkits.mplot3d import axes3d
 import mpl_toolkits.mplot3d.art3d as art3d
+import argparse
+import gym
+import pickle
 
 # TODO: edit section
 class DistanceMesh:
@@ -294,7 +297,20 @@ class DistanceMesh:
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('env', type=str)
+    parser.add_argument('--mesh', type=bool, default=False)
+    parser.add_argument('--obstacle_nodes', type=bool, default=False)
+    #parser.add_argument('--path', type=bool, default=False)
+    parser.add_argumetn('--pickle', type=str, default=None)
+    args = parser.parse_args()
     obstacles = list()
+    goals_list = None
+    if args.pickle:
+        with open(args.pickle, 'rb') as file:
+            goals_list = pickle.load(file)
+
+
     field = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
     obstacles = [[0.5, 0.5, 0.25, 0.5, 0.25, 0.25]]
     spaces = [30, 30, 5]
@@ -302,8 +318,11 @@ def main():
     mesh = DistanceMesh(field=field, spaces=spaces, obstacles=obstacles)
     mesh.compute_cs_graph()
     mesh.compute_dist_matrix(compute_predecessors=True)
+
     dist, path = mesh.get_dist([0, 0, 0], [1, 1, 0], return_path=True)
     #mesh.plot_graph(path=path, mesh=True, obstacle_nodes=True)
+
+
     mesh.plot_graph(goals=goals, save_path="../log/test")
     print("Dist: {}".format(dist))
 
