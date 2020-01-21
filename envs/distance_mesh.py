@@ -107,8 +107,8 @@ class DistanceMesh:
                 return False
 
     def index2node(self, index):
-        [i, j, k] = index
-        node = i + j * self.x_range + k * self.x_range * self.y_range
+        #[i, j, k] = index
+        node = index[0] + index[1] * self.x_range + index[2] * self.x_range * self.y_range
         return int(node)
 
 
@@ -188,29 +188,20 @@ class DistanceMesh:
 
     def get_dist(self, coords1, coords2, return_path=False):
         # coords1 and coords2 of form [1, 1, 1]
-        #t0 = timer()
         if self.dist_matrix is None:
             raise Exception("No dist_matrix available!")
-        #t1 = timer()
+
         index1 = self.coords2index(coords1)
         index2 = self.coords2index(coords2)
+
         if index1 is None or index2 is None:
             return np.inf
-        #t2 = timer()
-        #goal_a = self.index2coords(self.node2index(self.index2node(self.coords2index(coords1))))
-        #goal_b = self.index2coords(self.node2index(self.index2node(self.coords2index(coords2))))
-        #print("get_dist goals: {} // {}".format(goal_a, goal_b))
+
         node_a = self.index2node(index1)
         node_b = self.index2node(index2)
         if not return_path:
-            #t3 = timer()
-            d = self.dist_matrix[node_a, node_b]
-            #t4 = timer()
-            #print("dist_matrix exception: {}".format(t1-t0))
-            #print("inf: {}".format(t2-t1))
-            #print("transform {}".format(t3-t2))
-            #print("Dist_matrix_access: {}".format(t4-t3))
-            return d
+            return self.dist_matrix[node_a, node_b]
+
         else:
             if self.predecessors is None:
                 raise Exception("No predecessors available!")
