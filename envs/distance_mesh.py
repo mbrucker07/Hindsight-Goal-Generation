@@ -188,17 +188,29 @@ class DistanceMesh:
 
     def get_dist(self, coords1, coords2, return_path=False):
         # coords1 and coords2 of form [1, 1, 1]
+        #t0 = timer()
         if self.dist_matrix is None:
             raise Exception("No dist_matrix available!")
-        if self.coords2index(coords1) is None or self.coords2index(coords2) is None:
+        #t1 = timer()
+        index1 = self.coords2index(coords1)
+        index2 = self.coords2index(coords2)
+        if index1 is None or index2 is None:
             return np.inf
-        goal_a = self.index2coords(self.node2index(self.index2node(self.coords2index(coords1))))
-        goal_b = self.index2coords(self.node2index(self.index2node(self.coords2index(coords2))))
+        #t2 = timer()
+        #goal_a = self.index2coords(self.node2index(self.index2node(self.coords2index(coords1))))
+        #goal_b = self.index2coords(self.node2index(self.index2node(self.coords2index(coords2))))
         #print("get_dist goals: {} // {}".format(goal_a, goal_b))
-        node_a = self.index2node(self.coords2index(coords1))
-        node_b = self.index2node(self.coords2index(coords2))
+        node_a = self.index2node(index1)
+        node_b = self.index2node(index2)
         if not return_path:
-            return self.dist_matrix[node_a, node_b]
+            #t3 = timer()
+            d = self.dist_matrix[node_a, node_b]
+            #t4 = timer()
+            #print("dist_matrix exception: {}".format(t1-t0))
+            #print("inf: {}".format(t2-t1))
+            #print("transform {}".format(t3-t2))
+            #print("Dist_matrix_access: {}".format(t4-t3))
+            return d
         else:
             if self.predecessors is None:
                 raise Exception("No predecessors available!")
@@ -296,21 +308,9 @@ class DistanceMesh:
             print(self.numbers[:-1, :-1, i])
 
 
+
+
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('env', type=str)
-    parser.add_argument('--mesh', type=bool, default=False)
-    parser.add_argument('--obstacle_nodes', type=bool, default=False)
-    #parser.add_argument('--path', type=bool, default=False)
-    parser.add_argumetn('--pickle', type=str, default=None)
-    args = parser.parse_args()
-    obstacles = list()
-    goals_list = None
-    if args.pickle:
-        with open(args.pickle, 'rb') as file:
-            goals_list = pickle.load(file)
-
-
     field = [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
     obstacles = [[0.5, 0.5, 0.25, 0.5, 0.25, 0.25]]
     spaces = [30, 30, 5]
@@ -319,12 +319,28 @@ def main():
     mesh.compute_cs_graph()
     mesh.compute_dist_matrix(compute_predecessors=True)
 
-    dist, path = mesh.get_dist([0, 0, 0], [1, 1, 0], return_path=True)
+    time_0 = timer()
+    index = mesh.coords2index([0,0,1])
+    time_1 = timer()
+    node = mesh.index2node(index)
+    time_2 = timer()
+    index_2 = mesh.node2index(node)
+    time_3 = timer()
+    coords_2 = mesh.index2coords(index_2)
+    time_4 = timer()
+
+    print("Coords2index: {}".format(time_1-time_0))
+    print("Index2node: {}".format(time_2-time_1))
+    print("Node2Index: {}".format(time_3-time_2))
+    print("Index2coords: {}".format(time_4-time_3))
+
+    time_5 = timer()
+    dist = mesh.get_dist([0, 0, 0], [1, 1, 0])
+    time_6 = timer()
+    print("get_dist: {}".format(time_6-time_5))
     #mesh.plot_graph(path=path, mesh=True, obstacle_nodes=True)
-
-
-    mesh.plot_graph(goals=goals, save_path="../log/test")
-    print("Dist: {}".format(dist))
+    #mesh.plot_graph(goals=goals, save_path="../log/test")
+    #print("Dist: {}".format(dist))
 
 if __name__ == "__main__":
     main()
