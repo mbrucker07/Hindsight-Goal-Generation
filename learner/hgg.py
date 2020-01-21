@@ -142,7 +142,7 @@ class MatchSampler:
 					size = achieved_pool[i].shape[0]
 					res_1 = np.zeros(size)
 					for k in range(size):
-						res_1[k] = self.get_mesh_goal_distance(achieved_pool[i][k], desired_goals[i])
+						res_1[k] = self.get_mesh_goal_distance(achieved_pool[i][k], desired_goals[j])
 					res = res_1 - achieved_value[i]/(self.args.hgg_L/self.max_dis/(1-self.args.gamma))
 				else:
 					res = np.sqrt(np.sum(np.square(achieved_pool[i] - desired_goals[j]), axis=1)) - achieved_value[i]/(self.args.hgg_L / self.max_dis / (1 - self.args.gamma))  # Todo: that was original
