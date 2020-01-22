@@ -29,10 +29,10 @@ class DDPG:
 			self.sess = tf.Session(config=config)
 
 		def create_inputs():
-			self.raw_obs_ph = tf.placeholder(tf.float32, [None]+self.args.obs_dims)
-			self.raw_obs_next_ph = tf.placeholder(tf.float32, [None]+self.args.obs_dims)
-			self.acts_ph = tf.placeholder(tf.float32, [None]+self.args.acts_dims)
-			self.rews_ph = tf.placeholder(tf.float32, [None, 1])
+			self.raw_obs_ph = tf.placeholder(tf.float32, [None]+self.args.obs_dims, name='raw_obs_ph') # TODO: changed names!
+			self.raw_obs_next_ph = tf.placeholder(tf.float32, [None]+self.args.obs_dims, name='raw_obs_next_ph')
+			self.acts_ph = tf.placeholder(tf.float32, [None]+self.args.acts_dims, name='acts_ph')
+			self.rews_ph = tf.placeholder(tf.float32, [None, 1], name='rews_ph')
 
 		def create_normalizer():
 			with tf.variable_scope('normalizer'):

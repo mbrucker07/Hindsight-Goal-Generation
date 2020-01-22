@@ -26,11 +26,14 @@ def get_args():
 			parser.add_argument('--init_rotation', help='initial rotation in hand environments', type=np.float32, default=0.25)
 	parser.add_argument('--mesh', help='mesh yes or no', type=bool, default=False)
 	parser.add_argument('--show_goals', help='number of goals to show', type=np.int32, default=0)
-	parser.add_argument('--render', help='render for play', type=bool, default=False)
+	parser.add_argument('--play_path', help='path to meta_file directory for play', type=str, default=None)
+	parser.add_argument('--play_epoch', help='epoch to play', type=str, default='latest')
+
 	parser.add_argument('--gamma', help='discount factor', type=np.float32, default=0.98)
 	parser.add_argument('--clip_return', help='whether to clip return value', type=str2bool, default=True)
 	parser.add_argument('--eps_act', help='percentage of epsilon greedy explorarion', type=np.float32, default=0.3)
 	parser.add_argument('--std_act', help='standard deviation of uncorrelated gaussian explorarion', type=np.float32, default=0.2)
+
 
 	parser.add_argument('--pi_lr', help='learning rate of policy network', type=np.float32, default=1e-3)
 	parser.add_argument('--q_lr', help='learning rate of value network', type=np.float32, default=1e-3)
@@ -88,5 +91,6 @@ def experiment_setup(args):
 	args.logger.info('*** network initialization complete ***')
 	args.tester = tester = Tester(args)
 	args.logger.info('*** tester initialization complete ***')
+	args.timesteps = env.env.env.spec.max_episode_steps
 
 	return env, env_test, agent, buffer, learner, tester

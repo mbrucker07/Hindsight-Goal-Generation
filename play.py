@@ -1,68 +1,53 @@
 import numpy as np
-from .envs import make_env
-from .algorithm.replay_buffer import goal_based_process
-from .utils.os_utils import make_dir
-from .common import get_args
+from envs import make_env
+from algorithm.replay_buffer import goal_based_process
+from utils.os_utils import make_dir
+from common import get_args
+import tensorflow as tf
 
-def main():
-    args = get_args()
-    env, env_test, agent, buffer, learner, tester = experiment_setup(args)
 
 class Player:
     def __init__(self, args):
         self.args = args
         self.env = make_env(args)
+        self.args.timesteps = self.env.env.env.spec.max_episode_steps
         self.env_test = make_env(args)
-
         self.info = []
-        if args.save_acc:
-            make_dir('log/accs', clear=False)
-            self.test_rollouts = 100
 
-            self.env_List = []
-            self.env_test_List = []
-            for _ in range(self.test_rollouts):
-                self.env_List.append(make_env(args))
-                self.env_test_List.append(make_env(args))
+        self.test_rollouts = 100
+        self.play_dir = args.play_path
+        self.play_epoch = args.play_epoch
+        self.meta_path = "{}saved_policy-{}.meta".format(self.play_dir, self.play_epoch)
+        self.sess = tf.Session()
+        self.saver = tf.train.import_meta_graph(self.meta_path)
+        self.saver.restore(self.sess, tf.train.latest_checkpoint(self.play_dir))
 
-            self.acc_record = {}
-            self.acc_record[self.args.goal] = []
-            for key in self.acc_record.keys():
-                self.info.append('Success/'+key+'@blue')
+        graph=tf.get_default_graph()
+        self.raw_obs_ph = graph.get_tensor_by_name("raw_obs_ph:0")
+        self.pi = graph.get_tensor_by_name("main/policy/net/pi/Tanh:0")
 
-    def test_acc(self, key, env, agent):
+
+    def my_step_batch(self, obs):
+        actions = self.sess.run(self.pi, {self.raw_obs_ph: obs})
+        return actions
+
+
+    def play(self):
+        env = self.env
         acc_sum, obs = 0.0, []
         for i in range(self.test_rollouts):
-            obs.append(goal_based_process(env[i].reset()))
+            obs.append(goal_based_process(env.reset()))
             for timestep in range(self.args.timesteps):
-                actions = agent.step_batch(obs)
+                actions = self.my_step_batch(obs)
                 obs, infos = [], []
-                for i in range(self.test_rollouts):
-                    ob, _, _, info = env[i].step(actions[i])
-                    obs.append(goal_based_process(ob))
-                    infos.append(info)
-                    env.render()
-            acc_sum += infos[i]['Success']
+                ob, _, _, info = env.step(actions[0])
+                obs.append(goal_based_process(ob))
+                infos.append(info)
+                env.render()
 
-        steps = self.args.buffer.counter
-        acc = acc_sum/self.test_rollouts
-        self.acc_record[key].append((steps,acc))
-        self.args.logger.add_record('Success/'+key, acc)
 
-    def cycle_summary(self):
-        if self.args.save_acc:
-            self.test_acc(self.args.goal, self.env_List, self.args.agent)
 
-    def epoch_summary(self):
-        if self.args.save_acc:
-            for key, acc_info in self.acc_record.items():
-                log_folder = 'accs'
-                if self.args.tag!='': log_folder = log_folder+'/'+self.args.tag
-                self.args.logger.save_npz(acc_info, key, log_folder)
-
-    def final_summary(self):
-        if self.args.save_acc:
-            for key, acc_info in self.acc_record.items():
-                log_folder = 'accs'
-                if self.args.tag!='': log_folder = log_folder+'/'+self.args.tag
-                self.args.logger.save_npz(acc_info, key, log_folder)
+if __name__ == "__main__":
+    args = get_args()
+    player = Player(args)
+    player.play()

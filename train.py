@@ -3,11 +3,11 @@ import time
 from common import get_args,experiment_setup
 from copy import deepcopy
 import pickle
+import tensorflow as tf
 
 if __name__=='__main__':
 	args = get_args()
 	env, env_test, agent, buffer, learner, tester = experiment_setup(args)
-
 	args.logger.summary_init(agent.graph, agent.sess)
 
 	# Progress info
@@ -17,7 +17,7 @@ if __name__=='__main__':
 	args.logger.add_item('Timesteps')
 	args.logger.add_item('TimeCost(sec)')
 
-	best_success = 0.0
+	best_success = -1
 
 	# Algorithm info
 	for key in agent.train_info.keys():
@@ -45,20 +45,25 @@ if __name__=='__main__':
 			args.logger.add_record('TimeCost(sec)', time.time()-start_time)
 
 			args.logger.save_csv()
-			"""
-			#TODO: new section
-			if counter >= 3:
-				values = args.logger.save_csv()
-				for key, value in values.items():
-					if "Success" in key:
-						current_success = value
-				if current_success >= best_success:
-					args.logger.save_agent(agent, "best")
-				args.logger.save_agent(agent, "latest")
-			counter += 1
-			"""
+
 			args.logger.tabular_show(args.tag)
 			args.logger.summary_show(buffer.counter)
+
+			# save latest policy
+			policy_file = args.logger.my_log_dir + "saved_policy-latest"
+			agent.saver.save(agent.sess, policy_file)
+			# save best policy
+			if args.logger.values["Success"] > best_success:
+				best_success = args.logger.values["Success"]
+				policy_file = args.logger.my_log_dir + "saved_policy-best"
+				agent.saver.save(agent.sess, policy_file)
+				print("Saved as best policy to {}!".format(args.logger.my_log_dir))
+
+		#save periodic policy every epoch
+		policy_file = args.logger.my_log_dir + "saved_policy"
+		agent.saver.save(agent.sess, policy_file, global_step=epoch)
+		print("Saved periodic policy to {}!".format(args.logger.my_log_dir))
+
 		if args.learn == 'hgg' and goal_list and args.show_goals != 0:
 			name = "{}goals_{}".format(args.logger.my_log_dir, epoch)
 			if args.mesh:

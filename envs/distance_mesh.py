@@ -304,6 +304,24 @@ class DistanceMesh:
             print(self.numbers[:-1, :-1, i])
 
 
+def main2():
+    coords = np.array([0.1, 0.1, 0.4])
+    coords_min = np.array([0.0, 0.2, 0.2])
+    coords_max = np.array([1.0, 0.5, 0.5])
+    dx = np.array([1/0.013, 1/0.012, 1/0.011])
+    matrix = np.array([[1/0.01, 0, 0],
+                      [0, 1/0.01, 0],
+                      [0, 0, 1/0.01]])
+    t0 = timer()
+    if not np.all(np.less_equal(coords_min, coords)*np.less_equal(coords, coords_max)):
+        result = None
+    else:
+        t1=timer()
+        result = np.round((coords - coords_min)*dx)
+    t2 = timer()
+    print("new: {}".format(t2-t0))
+    #print("first: {}".format(t1-t0))
+    print("Result: {}".format(result))
 
 
 def main():
@@ -316,10 +334,10 @@ def main():
     adapt_dict["field"] = [1.3, 0.75, 0.6, 0.25, 0.35, 0.2]
     adapt_dict["obstacles"] = [[1.3 - 0.07, 0.75, 0.6 - 0.1, 0.18, 0.1, 0.1]] #w=0.04
     adapt_dict["spaces"] = [3, 10, 3]
-    mesh = DistanceMesh(field=adapt_dict["field"], spaces=adapt_dict["spaces"], obstacles=adapt_dict["obstacles"])
+    mesh = DistanceMesh(field=field, spaces=spaces, obstacles=obstacles)
     mesh.compute_cs_graph()
     mesh.compute_dist_matrix(compute_predecessors=True)
-    """
+
     time_0 = timer()
     index = mesh.coords2index([0,0,1])
     time_1 = timer()
@@ -339,10 +357,10 @@ def main():
     dist = mesh.get_dist([0, 0, 0], [1, 1, 0])
     time_6 = timer()
     print("get_dist: {}".format(time_6-time_5))
-    """
-    mesh.plot_graph(mesh=True, obstacle_nodes=True)
+
+    #mesh.plot_graph(mesh=True, obstacle_nodes=True)
     #mesh.plot_graph(goals=goals, save_path="../log/test")
     #print("Dist: {}".format(dist))
 
 if __name__ == "__main__":
-    main()
+    main2()
