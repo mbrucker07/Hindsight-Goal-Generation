@@ -92,7 +92,7 @@ class DDPG:
 				for v, v_t in zip(get_vars('main'), get_vars('target'))
 			])
 
-			self.saver=tf.train.Saver()
+			self.saver=tf.train.Saver(max_to_keep=100)
 			self.init_op = tf.global_variables_initializer()
 			self.target_init_op = tf.group([
 				v_t.assign(v)
