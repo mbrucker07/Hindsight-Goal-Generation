@@ -332,12 +332,12 @@ def main():
     #FetchPushObstacle
     adapt_dict = dict()
     adapt_dict["field"] = [1.3, 0.75, 0.6, 0.25, 0.35, 0.2]
-    adapt_dict["obstacles"] = [[1.3 - 0.07, 0.75, 0.6 - 0.1, 0.18, 0.1, 0.1]] #w=0.04
-    adapt_dict["spaces"] = [3, 10, 3]
-    mesh = DistanceMesh(field=field, spaces=spaces, obstacles=obstacles)
+    adapt_dict["obstacles"] = [[1.3, 0.75, 0.6 - 0.18, 0.25, 0.04, 0.1]]
+    adapt_dict["spaces"] = [5, 10, 5]
+    mesh = DistanceMesh(field=adapt_dict["field"], spaces=adapt_dict["spaces"], obstacles=adapt_dict["obstacles"])
     mesh.compute_cs_graph()
     mesh.compute_dist_matrix(compute_predecessors=True)
-
+    """
     time_0 = timer()
     index = mesh.coords2index([0,0,1])
     time_1 = timer()
@@ -357,10 +357,10 @@ def main():
     dist = mesh.get_dist([0, 0, 0], [1, 1, 0])
     time_6 = timer()
     print("get_dist: {}".format(time_6-time_5))
-
-    #mesh.plot_graph(mesh=True, obstacle_nodes=True)
+    """
+    mesh.plot_graph(mesh=True, obstacle_nodes=True)
     #mesh.plot_graph(goals=goals, save_path="../log/test")
     #print("Dist: {}".format(dist))
 
 if __name__ == "__main__":
-    main2()
+    main()

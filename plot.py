@@ -58,6 +58,7 @@ parser.add_argument('dir', type=str)
 parser.add_argument('env_id', type=str)
 parser.add_argument('--smooth', type=int, default=1)
 args = parser.parse_args()
+env_id = args.env_id
 
 # Load all data.
 data = {}
@@ -65,6 +66,14 @@ paths = [os.path.abspath(os.path.join(path, '..')) for path in glob2.glob(os.pat
 for curr_path in paths:
     if not os.path.isdir(curr_path):
         continue
+    if not args.dir in curr_path:
+        continue
+
+    clean_path = curr_path.replace(env_id, '')
+    config = ''.join([i for i in clean_path if not i.isdigit()])
+    run = ''.join([i for i in clean_path if i.isdigit()])
+    print('Config / run: {} / {}'.format(config, run))
+
     results = load_results(os.path.join(curr_path, 'progress.csv'))
     if not results:
         print('skipping {}'.format(curr_path))
@@ -78,7 +87,7 @@ for curr_path in paths:
             success_rate = np.array(results[key])
             episode = np.array(results['Episodes']) + 1
             #env_id = params['env_name']
-            env_id = args.env_id
+
             #replay_strategy = params['replay_strategy']
 
             """
@@ -93,7 +102,7 @@ for curr_path in paths:
             env_id = env_id.replace('Dense', '')
             """
 
-            config = args.dir
+
 
             # Process and smooth data.
             assert success_rate.shape == episode.shape
@@ -103,27 +112,30 @@ for curr_path in paths:
                 x, y = smooth_reward_curve(episode, success_rate)
             assert x.shape == y.shape
 
-            if env_id not in data:
-                data[env_id] = {}
-            if config not in data[env_id]:
-                data[env_id][config] = []
-            data[env_id][config].append((x, y))
+            if config not in data:
+                data[config] = {}
+            if run not in data[config]:
+                data[config][run] = []
+            data[config][run].append((x, y))
 
 
 # Plot data.
-for env_id in sorted(data.keys()):
-    print('exporting {}'.format(env_id))
-    plt.clf()
+print('exporting {}'.format(env_id))
+plt.clf()
 
-    for config in sorted(data[env_id].keys()):
-        xs, ys = zip(*data[env_id][config])
+for config in sorted(data.keys()):
+
+    for run in sorted(data[config].keys()):
+        xs, ys = zip(*data[config][run])
         xs, ys = pad(xs), pad(ys)
         assert xs.shape == ys.shape
-
         plt.plot(xs[0], np.nanmedian(ys, axis=0), label=config)
         plt.fill_between(xs[0], np.nanpercentile(ys, 25, axis=0), np.nanpercentile(ys, 75, axis=0), alpha=0.25)
-    plt.title(env_id)
-    plt.xlabel('Episode')
-    plt.ylabel('Median Success Rate')
-    plt.legend()
-    plt.savefig(os.path.join(args.dir, 'fig_{}.png'.format(env_id)))
+
+
+
+plt.title(env_id)
+plt.xlabel('Episode')
+plt.ylabel('Median Success Rate')
+plt.legend()
+plt.svefig(os.path.join(args.dir, 'fig_{}.png'.format(env_id)))
