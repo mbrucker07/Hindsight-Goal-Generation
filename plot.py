@@ -68,8 +68,8 @@ for curr_path in paths:
         continue
     if not args.dir in curr_path:
         continue
-
     clean_path = curr_path.replace(env_id, '')
+    clean_path = os.path.basename(os.path.normpath(clean_path))
     config = ''.join([i for i in clean_path if not i.isdigit()])
     run = ''.join([i for i in clean_path if i.isdigit()])
     print('Config / run: {} / {}'.format(config, run))
