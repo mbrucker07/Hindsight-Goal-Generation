@@ -94,6 +94,7 @@ class DistanceMesh:
         print("\tX_spaces: {}, y_spaces: {}, z_spaces: {}".format(self.x_spaces, self.y_spaces, self.z_spaces))
         print("\tRequired spaces: x > {}, y > {}, z > {}".format(x_space_min, y_space_min, z_space_min))
         print("\tNum_nodes: {}".format(self.num_nodes))
+        print("\tZ_penalty: {}".format(self.z_penalty))
         print("\tObstacles:")
         for obstacle in obstacles:
             print("\t\t{}".format(obstacle))
