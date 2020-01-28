@@ -20,7 +20,7 @@ class DistanceMesh:
     dist_matrix = None
     predecessors = None
 
-    def __init__(self, field, spaces, obstacles):
+    def __init__(self, field, spaces, obstacles, z_penalty=1):
         # field is of form [m_x, m_y, m_z, l, w, h]
         # obstacles is list with entries of form: [m_x, m_y, m_z, l, w, h]
         # Up to 10000 nodes can be handled memorywise (computation time is not problematic)
@@ -41,6 +41,8 @@ class DistanceMesh:
         self.z_spaces = spaces[2]
 
         self.obstacles = obstacles
+
+        self.z_penalty = z_penalty
 
         # Up to 10000 nodes can be handled memorywise (computation time is not problematic)
         # Product should not increase 8000
@@ -106,8 +108,7 @@ class DistanceMesh:
             h += 0.02
             if m_x - l <= x <= m_x + l and m_y - w <= y <= m_y + w and m_z - h <= z <= m_z + h:
                 return True
-            else:
-                return False
+        return False
 
     def index2node(self, index):
         #[i, j, k] = index
@@ -165,7 +166,7 @@ class DistanceMesh:
                                 if self.colors[i+a, j+b, k+c] == 0: # i.e. is white
                                     basenode = self.index2node([i, j, k])
                                     connectnode = self.index2node([i+a, j+b, k+c])
-                                    d = np.sqrt(a*a*self.dx*self.dx + b*b*self.dy*self.dy + c*c*self.dz*self.dz)
+                                    d = np.sqrt(a*a*self.dx*self.dx + b*b*self.dy*self.dy + c*c*self.z_penalty*self.z_penalty*self.dz*self.dz)
                                     #edges[index2node([i, j, k]), index2node([i+a, j+b, k+c])] = np.sqrt(a*a + b*b + c*c)
                                     #edges[index2node([i+a, j+b, k+c]), index2node([i, j, k])] = np.sqrt(a*a + b*b + c*c)
                                     row.append(basenode)
@@ -288,8 +289,8 @@ class DistanceMesh:
         ax.set_xlabel('x')
         ax.set_ylabel('y')
         ax.set_zlabel('z')
-        #plt.show()
-        plt.savefig(save_path + ".png")
+        plt.show()
+        #plt.savefig(save_path + ".png")
         print("\tdone")
 
 
@@ -329,14 +330,20 @@ def main():
     obstacles = [[0.5, 0.5, 0.25, 0.5, 0.25, 0.25]]
     spaces = [30, 30, 5]
     goals = [[1, 0, 0.2], [0,0.1, 0.1], [0.8, 0, 0]]
+    z_penalty = 1
     #FetchPushObstacle
     adapt_dict = dict()
+    adapt_dict = dict()
     adapt_dict["field"] = [1.3, 0.75, 0.6, 0.25, 0.35, 0.2]
-    adapt_dict["obstacles"] = [[1.3, 0.75, 0.6 - 0.18, 0.25, 0.04, 0.1]]
-    adapt_dict["spaces"] = [5, 10, 5]
-    mesh = DistanceMesh(field=adapt_dict["field"], spaces=adapt_dict["spaces"], obstacles=adapt_dict["obstacles"])
+    adapt_dict["obstacles"] = [[1.3, 0.75, 0.6 - 0.15, 0.11, 0.02, 0.05],
+                                    [1.3 - 0.13, 0.75, 0.6 - 0.15, 0.02, 0.25, 0.05],
+                                    [1.3 + 0.13, 0.75, 0.6 - 0.15, 0.02, 0.25, 0.05]]
+    adapt_dict["spaces"] = [18, 18, 6]  # [30, 30, 10]
+    adapt_dict["z_penalty"] = 10  # [30, 30, 10]
+    mesh = DistanceMesh(field=adapt_dict["field"], spaces=adapt_dict["spaces"], obstacles=adapt_dict["obstacles"], z_penalty=adapt_dict["z_penalty"])
     mesh.compute_cs_graph()
     mesh.compute_dist_matrix(compute_predecessors=True)
+    dist, path = mesh.get_dist([1.3, 0.75-0.1, 0.4], [1.3, 0.75+0.1, 0.4], return_path=True)
     """
     time_0 = timer()
     index = mesh.coords2index([0,0,1])
@@ -358,7 +365,7 @@ def main():
     time_6 = timer()
     print("get_dist: {}".format(time_6-time_5))
     """
-    mesh.plot_graph(mesh=True, obstacle_nodes=True)
+    mesh.plot_graph(path=path, obstacle_nodes=True)
     #mesh.plot_graph(goals=goals, save_path="../log/test")
     #print("Dist: {}".format(dist))
 

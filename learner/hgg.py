@@ -67,7 +67,8 @@ class MatchSampler:
 		field = self.env.env.env.adapt_dict["field"]
 		obstacles = self.env.env.env.adapt_dict["obstacles"]
 		spaces = self.env.env.env.adapt_dict["spaces"]
-		mesh = DistanceMesh(field=field, spaces=spaces, obstacles=obstacles)
+		z_penalty = self.env.env.env.adapt_dict["z_penalty"]
+		mesh = DistanceMesh(field=field, spaces=spaces, obstacles=obstacles, z_penalty=z_penalty)
 		mesh.compute_cs_graph()
 		mesh.compute_dist_matrix()
 		self.mesh = mesh
