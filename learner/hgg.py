@@ -77,7 +77,10 @@ class MatchSampler:
 		#print("HGG goals: {} // {}".format(goal_a, goal_b))
 		if self.args.mesh:
 			#print("{} vs. {}".format(self.mesh.get_dist(goal_a, goal_b), np.linalg.norm(goal_a - goal_b, ord=2)))
-			return self.mesh.get_dist(goal_a, goal_b)
+			d = self.mesh.get_dist(goal_a, goal_b)
+			if d == np.inf:
+				d = 9999
+			return d
 		else:
 			return 	np.linalg.norm(goal_a - goal_b, ord=2)
 
