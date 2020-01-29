@@ -338,17 +338,30 @@ def main():
     z_penalty = 10
     #FetchPushObstacle
     adapt_dict = dict()
-    adapt_dict = dict()
+    """
+    # FetchPushLabyrinth
     adapt_dict["field"] = [1.3, 0.75, 0.6, 0.25, 0.35, 0.2]
     adapt_dict["obstacles"] = [[1.3, 0.75, 0.6 - 0.1, 0.11, 0.02, 0.1],
                                 [1.3 - 0.13, 0.75, 0.6 - 0.17, 0.02, 0.25, 0.03],
                                 [1.3 + 0.13, 0.75, 0.6 - 0.17, 0.02, 0.25, 0.03]]
     adapt_dict["spaces"] = [18, 18, 10]  # [30, 30, 10]
     adapt_dict["z_penalty"] = 10  # [30, 30, 10]
+    """
+    adapt_dict["field"] = [1.55, 0.75, 0.6, 0.5, 0.35, 0.2]
+    adapt_dict["obstacles"] = [[1.55 + 0.02, 0.75, 0.6 - 0.15, 0.02, 0.35, 0.05],
+                               [1.55 + 0.48, 0.75, 0.6 - 0.15, 0.02, 0.35, 0.05],
+                               [1.55 + 0.25, 0.75 + 0.33, 0.6 - 0.15, 0.21, 0.02, 0.05],
+                               [1.55 + 0.25, 0.75 - 0.33, 0.6 - 0.15, 0.21, 0.02, 0.05]]
+
+    adapt_dict["spaces"] = [25, 25, 6]  # [50, 50, 3]
+    adapt_dict["z_penalty"] = 1
+
     mesh = DistanceMesh(field=adapt_dict["field"], spaces=adapt_dict["spaces"], obstacles=adapt_dict["obstacles"], z_penalty=adapt_dict["z_penalty"])
     mesh.compute_cs_graph()
     mesh.compute_dist_matrix(compute_predecessors=True)
-    dist, path = mesh.get_dist([1.211, 0.75-0.1, 0.42], [1.3, 0.75+0.1, 0.4], return_path=True)
+    dist, path = mesh.get_dist([1.3, 0.75, 0.42], [1.8, 0.9, 0.4], return_path=True)
+
+
     """
     time_0 = timer()
     index = mesh.coords2index([0,0,1])
@@ -370,7 +383,7 @@ def main():
     time_6 = timer()
     print("get_dist: {}".format(time_6-time_5))
     """
-    mesh.plot_graph(path=path, obstacle_nodes=True, show=True)
+    mesh.plot_graph(obstacle_nodes=True, show=True, path=path)
     #mesh.plot_graph(goals=goals, save_path="../log/test")
     #print("Dist: {}".format(dist))
 
